@@ -1,0 +1,19 @@
+[project]
+name = "python-uppgift01"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "jupyter-collaboration>=4.1.1",
+    "jupyterlab>=4.4.10",
+    "jupytext>=1.18.1",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.1.0",
+]
+
+[tool.jupytext]
+formats = "ipynb,py:percent"
