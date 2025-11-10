@@ -1,6 +1,7 @@
 # Extras
 .jupyter_ystore*
 .python-version
+data/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
