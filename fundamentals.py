@@ -31,7 +31,7 @@ scalar.ndim
 scalar.item()
 
 # %%
-vector = torch.tensor([7, 7])
+vector = torch.tensor([1, 2, 3])
 vector
 
 # %%
@@ -76,5 +76,17 @@ random_tensor.ndim
 # %%
 random_image_size_tensor = torch.rand(size=(3, 224, 224))
 random_image_size_tensor.shape, random_image_size_tensor.ndim
+
+# %%
+# %%time
+torch.matmul(vector, vector)
+
+# %%
+tensor_A = torch.tensor([[1, 2], [3, 4], [5, 6]])
+
+tensor_B = torch.tensor([[1, 2], [3, 4], [5, 6]])
+
+# %%
+torch.matmul(tensor_A, tensor_B.T)
 
 # %%
