@@ -161,87 +161,63 @@ def test():
 
 
 # %%
-def run_training_flow():
-    retrain = True
-    if MODEL_STATE_PATH.exists():
-        choice = (
-            input(
-                f"Existing weights found at {MODEL_STATE_PATH}. "
-                "Press Enter to use them, or type 'r' to retrain: "
-            )
-            .strip()
-            .lower()
-        )
-        retrain = choice == "r"
+def run_training_flow(retrain: bool = True, epochs: int = 10):
+    should_retrain = retrain or not MODEL_STATE_PATH.exists()
 
-    if retrain:
+    if should_retrain:
         print(f"Model is currently being trained using {str(device).upper()}")
         time.sleep(1)
-        for epoch in range(1, 11):
+        for epoch in range(1, epochs + 1):
             train(epoch)
             test()
         torch.save(model.state_dict(), MODEL_STATE_PATH)
         print(f"Saved trained weights to {MODEL_STATE_PATH}")
     else:
-        model.load_state_dict(torch.load(MODEL_STATE_PATH, map_location=device))
-        model.to(device)
-        print(f"Loaded trained weights from {MODEL_STATE_PATH}")
+        _load_model_state()
 
 
-if __name__ == "__main__":
-    run_training_flow()
-
-# %% [markdown]
-# ## Run a sample inference and visualize the corresponding digit
-# After training, we grab a user-selected test image (defaults to index 0 when no input is provided), run it through the model to get a prediction, and display the digit so we can visually verify the result makes sense.
+def _load_model_state():
+    if not MODEL_STATE_PATH.exists():
+        raise FileNotFoundError(
+            f"No trained weights found at {MODEL_STATE_PATH}. Run training first."
+        )
+    model.load_state_dict(torch.load(MODEL_STATE_PATH, map_location=device))
+    model.to(device)
+    print(f"Loaded trained weights from {MODEL_STATE_PATH}")
 
 
 # %%
-def run_sample_inference():
+def get_max_test_index() -> int:
+    return len(test_data) - 1
+
+
+def _get_test_sample(sample_index: int):
+    clamped_index = max(0, min(sample_index, get_max_test_index()))
+    data, target = test_data[clamped_index]
+    return clamped_index, data, target
+
+
+# %%
+def classify_test_sample(sample_index: int):
     model.eval()
 
-    default_sample_index = 0
+    clamped_index, data, target = _get_test_sample(sample_index)
 
-    max_index = len(test_data) - 1
+    batch = data.unsqueeze(0).to(device)
+    output = model(batch)
+    prediction = output.argmax(dim=1, keepdim=True).item()
 
-    while True:
-        user_choice = input(
-            f"Enter test sample index (0-{max_index}, default {default_sample_index}): "
-        ).strip()
-
-        if user_choice:
-            try:
-                sample_index = int(user_choice)
-            except ValueError:
-                print("Invalid input, defaulting to index 0.")
-                sample_index = default_sample_index
-        else:
-            sample_index = default_sample_index
-
-        sample_index = max(0, min(sample_index, max_index))
-
-        data, target = test_data[sample_index]
-
-        data = data.unsqueeze(0).to(device)
-
-        output = model(data)
-
-        prediction = output.argmax(dim=1, keepdim=True).item()
-
-        print(f"Prediction for sample {sample_index}: {prediction}")
-
-        show_choice = input("Display the digit with matplotlib? [y/N]: ").strip().lower()
-        if show_choice in ("y", "yes"):
-            image = data.squeeze(0).squeeze(0).cpu().numpy()
-            plt.imshow(image, cmap="gray")
-            plt.show()
-
-        repeat_choice = input("Classify another test sample? [y/N]: ").strip().lower()
-        if repeat_choice not in ("y", "yes"):
-            break
+    return {
+        "index": clamped_index,
+        "prediction": prediction,
+        "label": int(target),
+        "image": data.squeeze(0).cpu().numpy(),
+    }
 
 
-if __name__ == "__main__":
-    run_sample_inference()
+# %%
+def show_sample_image(image):
+    plt.imshow(image, cmap="gray")
+    plt.show()
 
 # %%
