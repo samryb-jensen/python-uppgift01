@@ -17,6 +17,7 @@
 # We bring in PyTorch for building neural networks, torchvision for the MNIST dataset and image transforms, and matplotlib so we can visualize digits later on.
 
 # %%
+import time
 from pathlib import Path
 
 import torch
@@ -156,65 +157,91 @@ def test():
 
 # %% [markdown]
 # ## Load existing weights or train for multiple epochs
-# If a saved checkpoint exists we load it and skip training; otherwise we loop through the dataset ten times, logging accuracy after each epoch before persisting the weights.
+# If a saved checkpoint exists we ask whether to reuse it; otherwise we loop through the dataset ten times, logging accuracy after each epoch before persisting the weights.
+
 
 # %%
-if MODEL_STATE_PATH.exists():
-    model.load_state_dict(torch.load(MODEL_STATE_PATH, map_location=device))
-    model.to(device)
-    print(f"Loaded trained weights from {MODEL_STATE_PATH}")
-else:
-    for epoch in range(1, 11):
-        train(epoch)
-        test()
-    torch.save(model.state_dict(), MODEL_STATE_PATH)
-    print(f"Saved trained weights to {MODEL_STATE_PATH}")
+def run_training_flow():
+    retrain = True
+    if MODEL_STATE_PATH.exists():
+        choice = (
+            input(
+                f"Existing weights found at {MODEL_STATE_PATH}. "
+                "Press Enter to use them, or type 'r' to retrain: "
+            )
+            .strip()
+            .lower()
+        )
+        retrain = choice == "r"
 
-# %% [markdown]
-# ## Quickly confirm whether training ran on CPU or GPU
-# Printing the `device` lets us confirm whether we benefitted from GPU acceleration or fell back to CPU.
+    if retrain:
+        print(f"Model is currently being trained using {str(device).upper()}")
+        time.sleep(1)
+        for epoch in range(1, 11):
+            train(epoch)
+            test()
+        torch.save(model.state_dict(), MODEL_STATE_PATH)
+        print(f"Saved trained weights to {MODEL_STATE_PATH}")
+    else:
+        model.load_state_dict(torch.load(MODEL_STATE_PATH, map_location=device))
+        model.to(device)
+        print(f"Loaded trained weights from {MODEL_STATE_PATH}")
 
-# %%
-print(device)
+
+if __name__ == "__main__":
+    run_training_flow()
 
 # %% [markdown]
 # ## Run a sample inference and visualize the corresponding digit
-# After training, we grab a user-selected test image (defaults to index 0 when running inside Jupyter), run it through the model to get a prediction, and display the digit so we can visually verify the result makes sense.
+# After training, we grab a user-selected test image (defaults to index 0 when no input is provided), run it through the model to get a prediction, and display the digit so we can visually verify the result makes sense.
+
 
 # %%
-model.eval()
+def run_sample_inference():
+    model.eval()
 
-default_sample_index = 0
+    default_sample_index = 0
 
-max_index = len(test_data) - 1
-user_choice = input(
-    f"Enter test sample index (0-{max_index}, default {default_sample_index}): "
-).strip()
+    max_index = len(test_data) - 1
 
-if user_choice:
-    try:
-        sample_index = int(user_choice)
-    except ValueError:
-        print("Invalid input, defaulting to index 0.")
-        sample_index = default_sample_index
-else:
-    sample_index = default_sample_index
+    while True:
+        user_choice = input(
+            f"Enter test sample index (0-{max_index}, default {default_sample_index}): "
+        ).strip()
 
-sample_index = max(0, min(sample_index, max_index))
+        if user_choice:
+            try:
+                sample_index = int(user_choice)
+            except ValueError:
+                print("Invalid input, defaulting to index 0.")
+                sample_index = default_sample_index
+        else:
+            sample_index = default_sample_index
 
-data, target = test_data[sample_index]
+        sample_index = max(0, min(sample_index, max_index))
 
-data = data.unsqueeze(0).to(device)
+        data, target = test_data[sample_index]
 
-output = model(data)
+        data = data.unsqueeze(0).to(device)
 
-prediction = output.argmax(dim=1, keepdim=True).item()
+        output = model(data)
 
-print(f"Prediction for sample {sample_index}: {prediction}")
+        prediction = output.argmax(dim=1, keepdim=True).item()
 
-image = data.squeeze(0).squeeze(0).cpu().numpy()
+        print(f"Prediction for sample {sample_index}: {prediction}")
 
-plt.imshow(image, cmap="gray")
-plt.show()
+        show_choice = input("Display the digit with matplotlib? [y/N]: ").strip().lower()
+        if show_choice in ("y", "yes"):
+            image = data.squeeze(0).squeeze(0).cpu().numpy()
+            plt.imshow(image, cmap="gray")
+            plt.show()
+
+        repeat_choice = input("Classify another test sample? [y/N]: ").strip().lower()
+        if repeat_choice not in ("y", "yes"):
+            break
+
+
+if __name__ == "__main__":
+    run_sample_inference()
 
 # %%
