@@ -155,8 +155,8 @@ def test():
 
 
 # %% [markdown]
-# ## Train for multiple epochs and report accuracy after each epoch
-# We loop through the dataset ten times, calling the training and testing helpers so we can watch accuracy improve (or diagnose issues) after every pass.
+# ## Load existing weights or train for multiple epochs
+# If a saved checkpoint exists we load it and skip training; otherwise we loop through the dataset ten times, logging accuracy after each epoch before persisting the weights.
 
 # %%
 if MODEL_STATE_PATH.exists():
@@ -179,12 +179,30 @@ print(device)
 
 # %% [markdown]
 # ## Run a sample inference and visualize the corresponding digit
-# After training, we grab one test image, run it through the model to get a prediction, and display the digit so we can visually verify the result makes sense.
+# After training, we grab a user-selected test image (defaults to index 0 when running inside Jupyter), run it through the model to get a prediction, and display the digit so we can visually verify the result makes sense.
 
 # %%
 model.eval()
 
-data, target = test_data[0]
+default_sample_index = 0
+
+max_index = len(test_data) - 1
+user_choice = input(
+    f"Enter test sample index (0-{max_index}, default {default_sample_index}): "
+).strip()
+
+if user_choice:
+    try:
+        sample_index = int(user_choice)
+    except ValueError:
+        print("Invalid input, defaulting to index 0.")
+        sample_index = default_sample_index
+else:
+    sample_index = default_sample_index
+
+sample_index = max(0, min(sample_index, max_index))
+
+data, target = test_data[sample_index]
 
 data = data.unsqueeze(0).to(device)
 
@@ -192,7 +210,7 @@ output = model(data)
 
 prediction = output.argmax(dim=1, keepdim=True).item()
 
-print(f"Prediction: {prediction}")
+print(f"Prediction for sample {sample_index}: {prediction}")
 
 image = data.squeeze(0).squeeze(0).cpu().numpy()
 
