@@ -1,61 +1,67 @@
 # Python Assignment 01
 
-This project uses [uv](https://docs.astral.sh/uv/) to manage dependencies and environments for JupyterLab, Jupytext, and real-time collaboration.
+Interactive MNIST playground powered by PyTorch and managed with [uv](https://docs.astral.sh/uv/). Notebooks and Python percent scripts stay in sync via Jupytext, and you can either explore the project inside JupyterLab or run the CLI directly with `python` through uv.
 
 ## Requirements
 
 - Python 3.12 or newer
 - uv (install via `curl -LsSf https://astral.sh/uv/install.sh | sh` or follow the official instructions for your OS)
 
-## Quick start
+## Setup
 
 ```bash
+# install all runtime and development dependencies
 uv sync
+
+# (optional) register the kernel so it shows up in JupyterLab
 uv run python -m ipykernel install --user --name "$(basename "$PWD")"
+```
+
+`uv sync` creates a uv-managed virtual environment, installs the packages pinned in `uv.lock`, and ensures JupyterLab, Jupytext, torch, and testing tools are available.
+
+## Running the project
+
+There are two supported workflows—pick whichever fits how you want to interact with the MNIST demo.
+
+### 1. JupyterLab + notebooks (exploratory)
+
+```bash
 uv run jupyter lab
 ```
 
-## Environment setup
+- Open `main.ipynb`, `mnist.ipynb` and select the `python-uppgift01` kernel (or whatever name you chose during `ipykernel install`).
+- Notebook files (`.ipynb`) mirror their `.py` counterparts via Jupytext’s [`py:percent`](https://jupytext.readthedocs.io) format, so edits in either place stay synchronized.
+- Use `uv run jupytext --sync path/to/notebook.ipynb` if you need to force a manual resync.
+
+### 2. Direct CLI (training + inference without notebooks)
 
 ```bash
-# create and activate a uv-managed virtual environment
-uv venv
-source .venv/bin/activate
-
-# install all runtime and development dependencies
-uv sync
+uv run python main.py
 ```
 
-`uv sync` ensures that JupyterLab, Jupytext, ipykernel, and related tools are installed according to the versions pinned in `uv.lock`.
+- The script asks whether to reuse existing weights in `mnist_cnn.pt` or retrain the CNN from scratch (default 10 epochs).
+- On the first run, the MNIST dataset downloads to `data/`; subsequent runs reuse the cached files.
+- After training/loading, you can repeatedly classify test samples, optionally plotting the digit with Matplotlib as you go.
 
-## Working with JupyterLab and Jupytext
+## Notebook/script pairing details
 
-- Launch the notebook environment:
+- Pairing rules live in `pyproject.toml` under `[tool.jupytext]` with `formats = "ipynb,py:percent"`.
+- Any `.ipynb` saved in JupyterLab automatically updates its sibling `.py` file, keeping the repo friendly for reviews and diffs.
 
-  ```bash
-  uv run jupyter lab
-  ```
+## Testing
 
-- This project stores notebooks in two synchronized formats:
+Unit tests cover the MNIST helper module. Run them with:
 
-  - Jupyter notebook files (`.ipynb`)
-  - Python percent scripts (`.py:percent`)
+```bash
+uv run pytest
+```
 
-- Pairing and sync behavior are configured in `pyproject.toml` under `[tool.jupytext]`.
-- To manually synchronize notebook/script pairs, run:
+## Collaboration tips
 
-  ```bash
-  uv run jupytext --sync path/to/notebook.ipynb
-  ```
-
-When you edit or save notebooks in JupyterLab, both representations stay synchronized automatically.
-
-## Collaboration
-
-JupyterLab 4+ supports real-time collaboration through the `jupyter-collaboration` extension. When running the lab server, multiple users can connect to the same notebook URL and edit simultaneously. All collaboration state is stored locally and does not need to be version controlled.
+- JupyterLab 4 ships with the `jupyter-collaboration` extension, so you can share a running Lab URL for real-time editing.
+- Collaboration state stays local; you only need to commit the synced notebooks/scripts.
 
 ## Notes
 
-- The registered kernel name is derived from your project directory.
-- Always select this project’s kernel (for example, `python-uppgift01`) inside JupyterLab to ensure notebooks execute in the correct uv environment.
-- Use `uv run` for all Jupyter-related commands to guarantee consistent dependency resolution.
+- Always invoke tooling through `uv run …` to ensure you use the managed environment.
+- The registered kernel name defaults to your project folder (for example, `python-uppgift01`).
