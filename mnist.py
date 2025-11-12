@@ -17,6 +17,8 @@
 # We bring in PyTorch for building neural networks, torchvision for the MNIST dataset and image transforms, and matplotlib so we can visualize digits later on.
 
 # %%
+from pathlib import Path
+
 import torch
 from torchvision import datasets
 from torchvision.transforms import ToTensor
@@ -114,6 +116,8 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 loss_fn = nn.CrossEntropyLoss()
 
+MODEL_STATE_PATH = Path("mnist_cnn.pt")
+
 
 def train(epoch):
     model.train()
@@ -155,9 +159,16 @@ def test():
 # We loop through the dataset ten times, calling the training and testing helpers so we can watch accuracy improve (or diagnose issues) after every pass.
 
 # %%
-for epoch in range(1, 11):
-    train(epoch)
-    test()
+if MODEL_STATE_PATH.exists():
+    model.load_state_dict(torch.load(MODEL_STATE_PATH, map_location=device))
+    model.to(device)
+    print(f"Loaded trained weights from {MODEL_STATE_PATH}")
+else:
+    for epoch in range(1, 11):
+        train(epoch)
+        test()
+    torch.save(model.state_dict(), MODEL_STATE_PATH)
+    print(f"Saved trained weights to {MODEL_STATE_PATH}")
 
 # %% [markdown]
 # ## Quickly confirm whether training ran on CPU or GPU

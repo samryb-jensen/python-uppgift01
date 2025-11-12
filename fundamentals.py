@@ -18,75 +18,18 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-print(torch.__version__)
+# %%
+my_series = [5, 9, 12, 27]
+table = pd.Series(my_series)
+table
 
 # %%
-scalar = torch.tensor(7)
-scalar
+table2 = pd.Series(my_series, ["A", "B", "C", "D"])
+table2
 
 # %%
-scalar.ndim
-
-# %%
-scalar.item()
-
-# %%
-vector = torch.tensor([1, 2, 3])
-vector
-
-# %%
-vector.ndim
-
-# %%
-vector.shape
-
-# %%
-MATRIX = torch.tensor([[7, 8], [9, 10]])
-MATRIX
-
-# %%
-MATRIX.ndim
-
-# %%
-MATRIX[0]
-
-# %%
-MATRIX.shape
-
-# %%
-TENSOR = torch.tensor([[[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]]])
-TENSOR
-
-# %%
-TENSOR.ndim
-
-# %%
-TENSOR.shape
-
-# %%
-TENSOR[0]
-
-# %%
-random_tensor = torch.rand(3, 4)
-random_tensor
-
-# %%
-random_tensor.ndim
-
-# %%
-random_image_size_tensor = torch.rand(size=(3, 224, 224))
-random_image_size_tensor.shape, random_image_size_tensor.ndim
-
-# %%
-# %%time
-torch.matmul(vector, vector)
-
-# %%
-tensor_A = torch.tensor([[1, 2], [3, 4], [5, 6]])
-
-tensor_B = torch.tensor([[1, 2], [3, 4], [5, 6]])
-
-# %%
-torch.matmul(tensor_A, tensor_B.T)
+cars = {"Tesla": 12, "Porche": 4, "Ferrari": 1}
+table3 = pd.Series(cars)
+table3
 
 # %%

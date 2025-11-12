@@ -1,4 +1,5 @@
 # Extras
+.DS_Store
 .jupyter_ystore*
 .python-version
 data/*
