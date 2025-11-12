@@ -12,18 +12,24 @@
 #     name: python-uppgift01
 # ---
 
+# %% [markdown]
+# ## CLI helpers for the MNIST demo
+# These cells mirror the notebook structure so the script stays readable in
+# Jupyter while remaining executable as a plain Python module.
+
 # %%
-from mnist import (
-    MODEL_STATE_PATH,
-    classify_test_sample,
-    get_max_test_index,
-    run_training_flow,
-    show_sample_image,
-)
+import matplotlib.pyplot as plt
+
+from mnist import MODEL_STATE_PATH, Model
 
 
+# %% [markdown]
+# ### User input helpers
+# Prompt utilities that wrap `input` with defaults and validation.
+
+
+# %%
 def prompt_yes_no(message: str, default: bool = False) -> bool:
-    """Read a yes/no response from stdin."""
     choice = input(message).strip().lower()
     if not choice:
         return default
@@ -31,7 +37,6 @@ def prompt_yes_no(message: str, default: bool = False) -> bool:
 
 
 def prompt_sample_index(max_index: int, default: int = 0) -> int:
-    """Ask the user for a sample index and clamp the value to the dataset bounds."""
     while True:
         choice = input(
             f"Enter test sample index (0-{max_index}, default {default}): "
@@ -47,30 +52,59 @@ def prompt_sample_index(max_index: int, default: int = 0) -> int:
             print("Invalid input, please enter an integer.")
 
 
-def maybe_retrain_model() -> None:
-    """Decide whether to train fresh weights or reuse the last checkpoint."""
-    retrain = True
+# %% [markdown]
+# ### Visualization helper
+# Render a grayscale digit with matplotlib when the user asks for it.
 
+
+# %%
+def show_sample_image(image) -> None:
+    plt.imshow(image, cmap="gray")
+    plt.show()
+
+
+# %% [markdown]
+# ### Training orchestration
+# Decide whether to reuse saved weights or retrain from scratch.
+
+
+# %%
+def maybe_retrain_model(epochs: int = 10) -> Model:
     if MODEL_STATE_PATH.exists():
-        choice = input(
-            f"Existing weights found at {MODEL_STATE_PATH}. "
-            "Press Enter to use them, or type 'r' to retrain: "
-        ).strip().lower()
-        retrain = choice == "r"
+        choice = (
+            input(
+                f"Existing weights found at {MODEL_STATE_PATH}. "
+                "Press Enter to use them, or type 'r' to retrain: "
+            )
+            .strip()
+            .lower()
+        )
+        if choice == "r":
+            model = Model()
+            model.train(epochs)
+        else:
+            model = Model.load(MODEL_STATE_PATH)
     else:
         print("No trained weights found, starting a new training run.")
+        model = Model()
+        model.train(epochs)
 
-    run_training_flow(retrain=retrain)
+    return model
 
 
-def inference_loop():
-    """Continually classify user-selected test samples."""
-    max_index = get_max_test_index()
+# %% [markdown]
+# ### Interactive inference loop
+# Continuously classify samples until the user opts out.
+
+
+# %%
+def inference_loop(model: Model) -> None:
+    max_index = model.get_max_test_index()
     default_index = 0
 
     while True:
         sample_index = prompt_sample_index(max_index, default_index)
-        result = classify_test_sample(sample_index)
+        result = model.classify(sample_index)
         print(f"Prediction for sample {result['index']}: {result['prediction']}")
 
         if prompt_yes_no("Display the digit with matplotlib? [y/N]: "):
@@ -80,9 +114,15 @@ def inference_loop():
             break
 
 
+# %% [markdown]
+# ### Entry point
+# Train/load once, then enter the inference loop.
+
+
+# %%
 def main():
-    maybe_retrain_model()
-    inference_loop()
+    model = maybe_retrain_model()
+    inference_loop(model)
 
 
 if __name__ == "__main__":
