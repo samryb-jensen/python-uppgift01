@@ -22,7 +22,6 @@
 # Core PyTorch building blocks plus torchvision datasets/transforms used below.
 
 # %%
-import time
 from pathlib import Path
 
 import torch
@@ -125,7 +124,6 @@ class Model:
 
     def train(self, epochs: int = 10, save: bool = True) -> None:
         print(f"Model is currently being trained using {str(self.device).upper()}")
-        time.sleep(1)
         for epoch in range(1, epochs + 1):
             self._train_single_epoch(epoch)
             self.test()
