@@ -69,7 +69,7 @@ def show_sample_image(image) -> None:
 
 
 # %%
-def maybe_retrain_model(epochs: int = 10) -> Model:
+def prompt_retrain_model(epochs: int = 10) -> Model:
     if MODEL_STATE_PATH.exists():
         choice = (
             input(
@@ -121,7 +121,7 @@ def inference_loop(model: Model) -> None:
 
 # %%
 def main():
-    model = maybe_retrain_model()
+    model = prompt_retrain_model()
     inference_loop(model)
 
 

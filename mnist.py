@@ -72,20 +72,26 @@ class Model:
         self,
         state_path: Path | str = MODEL_STATE_PATH,
         batch_size: int = 100,
-        data_root: str = "data",
+        data_root: Path | str = "data",
         download: bool = True,
     ) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.state_path = Path(state_path)
         self.batch_size = batch_size
-        self.data_root = data_root
+        self.data_root = Path(data_root)
 
         transform = ToTensor()
         self.train_data = datasets.MNIST(
-            root=data_root, train=True, transform=transform, download=download
+            root=self.data_root,
+            train=True,
+            transform=transform,
+            download=download,
         )
         self.test_data = datasets.MNIST(
-            root=data_root, train=False, transform=transform, download=download
+            root=self.data_root,
+            train=False,
+            transform=transform,
+            download=download,
         )
 
         self.loaders = {
@@ -103,7 +109,7 @@ class Model:
 
     @classmethod
     def load(cls, state_path: Path | str = MODEL_STATE_PATH, **kwargs) -> "Model":
-        model = cls(state_path=state_path, download=False, **kwargs)
+        model = cls(state_path=state_path, download=True, **kwargs)
         model.load_weights(state_path)
         return model
 
